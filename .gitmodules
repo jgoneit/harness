@@ -1,0 +1,3 @@
+[submodule "modules/acceptance/seal"]
+	path = modules/acceptance/seal
+	url = ../seal.git

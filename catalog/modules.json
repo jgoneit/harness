@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "id": "seal",
+      "name": "Seal",
+      "plane": "acceptance",
+      "status": "experimental",
+      "repository": "https://github.com/jgoneit/seal",
+      "submodule_path": "modules/acceptance/seal",
+      "description": "Evidence-backed completion for coding agents.",
+      "execution_owner": "native-agent-or-user",
+      "exposes": [
+        "cli",
+        "json",
+        "exit-code"
+      ],
+      "auto_invokes_modules": false
+    }
+  ]
+}
