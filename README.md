@@ -16,14 +16,14 @@ Only repositories that actually exist are listed.
 
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
-| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `8649fb04947fa55a83a87819ab3c2f0f46640f71` | `modules/acceptance/seal` |
+| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `480144289ca236f608e70ae07220d2a6a7cd0283` | `modules/acceptance/seal` |
 
 The pinned Seal candidate provides normalized `task create`, exact `task show`,
-and canonical `run show` over `.seal` state. Its Task writer closes a 102-case
-conformance matrix with no blocked cases, while the read-only surface retains
-74 frozen-Reference cases. The Go repository remains an experimental successor
-candidate; verification and completion are not implemented, and the Python
-behavioral reference remains
+manifest-valid `verify`, and canonical `run show` over `.seal` state. Verify
+runs saved checks, binds source before and after them, records layered Git
+evidence, and publishes one complete Run without deciding mechanical pass.
+The Go repository remains an experimental successor candidate; completion is
+not implemented, and the Python behavioral reference remains
 [Seal Legacy](https://github.com/jgoneit/seal-legacy).
 
 ## Clone the pinned workspace
