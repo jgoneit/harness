@@ -16,14 +16,12 @@ Only repositories that actually exist are listed.
 
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
-| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `480144289ca236f608e70ae07220d2a6a7cd0283` | `modules/acceptance/seal` |
+| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `bd86a683675fd14e38dc51899fa2489e4f0be985` | `modules/acceptance/seal` |
 
-The pinned Seal candidate provides normalized `task create`, exact `task show`,
-manifest-valid `verify`, and canonical `run show` over `.seal` state. Verify
-runs saved checks, binds source before and after them, records layered Git
-evidence, and publishes one complete Run without deciding mechanical pass.
-The Go repository remains an experimental successor candidate; completion is
-not implemented, and the Python behavioral reference remains
+The pinned Seal candidate provides Task creation and reads, manifest-valid
+verification, canonical Run reads, and Basic-profile completion over `.seal`
+state. The Go repository remains experimental; Bundle, Verdict, and Reviewer
+behavior are not implemented. The frozen Python behavioral reference remains
 [Seal Legacy](https://github.com/jgoneit/seal-legacy).
 
 ## Clone the pinned workspace
@@ -76,8 +74,7 @@ removal guidance:
 
 - [Seal README](https://github.com/jgoneit/seal#readme)
 
-The current Seal bootstrap has no release asset or installer and documents that
-limitation explicitly. Harness does not copy or wrap future module installers.
+Harness does not copy or wrap module installers.
 
 ## What Harness does not do
 
