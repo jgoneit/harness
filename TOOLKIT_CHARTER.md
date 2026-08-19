@@ -24,7 +24,7 @@ The Toolkit's long-term conceptual planes are:
   and user friction.
 
 These planes are an architecture map, not a list of promised repositories. The
-initial catalog contains only the existing Seal module.
+current catalog contains Ward in Security and Seal in Acceptance.
 
 ## Invariants
 

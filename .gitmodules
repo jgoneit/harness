@@ -1,3 +1,6 @@
 [submodule "modules/acceptance/seal"]
 	path = modules/acceptance/seal
 	url = ../seal.git
+[submodule "modules/security/ward"]
+	path = modules/security/ward
+	url = ../ward.git
