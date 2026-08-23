@@ -17,7 +17,7 @@ Only repositories that actually exist are listed.
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
 | Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `bd86a683675fd14e38dc51899fa2489e4f0be985` | `modules/acceptance/seal` |
-| Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `b5aa9d2f226d26d32fd8df32906978ca1536e5a9` | `modules/security/ward` |
+| Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `0637b3e567dd7f856d1ae492498658a080986e9e` | `modules/security/ward` |
 
 The pinned Seal candidate provides Task creation and reads, manifest-valid
 verification, canonical Run reads, and Basic-profile completion over `.seal`
@@ -81,7 +81,7 @@ Harness is not an installer. Follow each module's repository-owned setup and
 removal guidance:
 
 - [Seal README](https://github.com/jgoneit/seal#readme)
-- [Ward README at the pinned commit](https://github.com/jgoneit/ward/tree/b5aa9d2f226d26d32fd8df32906978ca1536e5a9#readme)
+- [Ward README at the pinned commit](https://github.com/jgoneit/ward/tree/0637b3e567dd7f856d1ae492498658a080986e9e#readme)
 
 Harness does not copy or wrap module installers.
 
