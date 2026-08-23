@@ -15,8 +15,9 @@
    - exact Git pins                   - no Harness runtime dependency
    - local source search
                                                 |
+                                      Ward / Security
                                       Seal / Acceptance
-                                      (currently experimental)
+                                      (both experimental)
 ```
 
 Execution remains above the module layer. Harness and modules expose state,
@@ -29,13 +30,14 @@ The architecture recognizes Knowledge, Security, Execution, Acceptance, Review,
 and Evaluation concerns. Execution is owned by the Native Agent and is not a
 Toolkit module. A conceptual Plane does not imply that a repository exists.
 
-The initial registry contains one real module:
+The registry contains two real modules:
 
+- Ward in the Security plane
 - Seal in the Acceptance plane
 
-Knowledge, Security, Review, and Evaluation entries are added only after their
-independent repositories and contracts exist. Harness does not create empty
-directories, placeholder submodules, or planned catalog records for them.
+Knowledge, Review, and Evaluation entries are added only after their independent
+repositories and contracts exist. Harness does not create empty directories,
+placeholder submodules, or planned catalog records for them.
 
 ## Catalog and gitlinks
 

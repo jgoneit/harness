@@ -17,12 +17,19 @@ Only repositories that actually exist are listed.
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
 | Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `bd86a683675fd14e38dc51899fa2489e4f0be985` | `modules/acceptance/seal` |
+| Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `b5aa9d2f226d26d32fd8df32906978ca1536e5a9` | `modules/security/ward` |
 
 The pinned Seal candidate provides Task creation and reads, manifest-valid
 verification, canonical Run reads, and Basic-profile completion over `.seal`
 state. The Go repository remains experimental; Bundle, Verdict, and Reviewer
 behavior are not implemented. The frozen Python behavioral reference remains
 [Seal Legacy](https://github.com/jgoneit/seal-legacy).
+
+The pinned Ward candidate installs and verifies a bounded native secret
+boundary, vetoes a small set of high-confidence catastrophic actions, and
+otherwise defers to the Host permission model. This pre-RC source pin is
+Experimental: it does not install or activate Ward, satisfy Ward's release
+gates, or claim production readiness.
 
 ## Clone the pinned workspace
 
@@ -42,7 +49,7 @@ scripts/bootstrap.sh
 
 The bootstrap script performs only recursive submodule sync, initialization,
 and status reporting. It does not install packages, select a newer module
-commit, or execute Seal.
+commit, or execute any module.
 
 ## Inspect exact pins
 
@@ -50,6 +57,7 @@ commit, or execute Seal.
 scripts/status.sh
 git submodule status --recursive
 git ls-tree HEAD modules/acceptance/seal
+git ls-tree HEAD modules/security/ward
 ```
 
 The superproject gitlink is the module version contract for this workspace. A
@@ -73,13 +81,14 @@ Harness is not an installer. Follow each module's repository-owned setup and
 removal guidance:
 
 - [Seal README](https://github.com/jgoneit/seal#readme)
+- [Ward README at the pinned commit](https://github.com/jgoneit/ward/tree/b5aa9d2f226d26d32fd8df32906978ca1536e5a9#readme)
 
 Harness does not copy or wrap module installers.
 
 ## What Harness does not do
 
-Harness does not execute agents, Seal, reviews, CI, deployment, retries, or
-repairs. It has no common runtime, event bus, provider registry, workflow
+Harness does not execute agents or modules, reviews, CI, deployment, retries,
+or repairs. It has no common runtime, event bus, provider registry, workflow
 history, central state machine, module enable flag, or shared mutable lifecycle
 state. It does not choose execution order or enforce model reasoning formats.
 

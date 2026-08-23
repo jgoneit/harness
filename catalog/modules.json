@@ -16,6 +16,22 @@
         "exit-code"
       ],
       "auto_invokes_modules": false
+    },
+    {
+      "id": "ward",
+      "name": "Ward",
+      "plane": "security",
+      "status": "experimental",
+      "repository": "https://github.com/jgoneit/ward",
+      "submodule_path": "modules/security/ward",
+      "description": "Bounded native secret protection and high-confidence catastrophic-action vetoes for coding agents.",
+      "execution_owner": "native-agent-or-user",
+      "exposes": [
+        "cli",
+        "json",
+        "exit-code"
+      ],
+      "auto_invokes_modules": false
     }
   ]
 }
