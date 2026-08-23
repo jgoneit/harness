@@ -16,13 +16,17 @@ Only repositories that actually exist are listed.
 
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
-| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `bd86a683675fd14e38dc51899fa2489e4f0be985` | `modules/acceptance/seal` |
+| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `998af7bbe865c24b523b393e0c71d8861bb4f364` | `modules/acceptance/seal` |
 | Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `0637b3e567dd7f856d1ae492498658a080986e9e` | `modules/security/ward` |
 
 The pinned Seal candidate provides Task creation and reads, manifest-valid
 verification, canonical Run reads, and Basic-profile completion over `.seal`
-state. The Go repository remains experimental; Bundle, Verdict, and Reviewer
-behavior are not implemented. The frozen Python behavioral reference remains
+state. It also includes a skills-only Codex Plugin adapter that declares
+explicit and repository-opted-in activation without bundling the CLI or taking
+over Acceptance authority. Fresh-task routing has not been smoke-tested, and
+repository-owned Plugin installation and removal guidance remains outstanding.
+The Go repository remains experimental; Bundle, Verdict, and Reviewer behavior
+are not implemented. The frozen Python behavioral reference remains
 [Seal Legacy](https://github.com/jgoneit/seal-legacy).
 
 The pinned Ward candidate installs and verifies a bounded native secret
