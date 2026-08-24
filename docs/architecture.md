@@ -10,14 +10,15 @@
             +-----------------+-----------------+
             |                                   |
    Harness catalog/workspace          Independent module repository
-   - descriptions                     - own install and release
+   - descriptions                     - own usage and lifecycle
    - repository links                 - own CLI/JSON/artifacts
    - exact Git pins                   - no Harness runtime dependency
    - local source search
                                                 |
                                       Ward / Security
                                       Seal / Acceptance
-                                      (both experimental)
+                                      Eval / Evaluation
+                                      (all experimental)
 ```
 
 Execution remains above the module layer. Harness and modules expose state,
@@ -30,14 +31,15 @@ The architecture recognizes Knowledge, Security, Execution, Acceptance, Review,
 and Evaluation concerns. Execution is owned by the Native Agent and is not a
 Toolkit module. A conceptual Plane does not imply that a repository exists.
 
-The registry contains two real modules:
+The registry contains three real modules:
 
 - Ward in the Security plane
 - Seal in the Acceptance plane
+- Eval in the Evaluation plane
 
-Knowledge, Review, and Evaluation entries are added only after their independent
-repositories and contracts exist. Harness does not create empty directories,
-placeholder submodules, or planned catalog records for them.
+Knowledge and Review entries are added only after their independent repositories
+and contracts exist. Harness does not create empty directories, placeholder
+submodules, or planned catalog records for them.
 
 ## Catalog and gitlinks
 
@@ -45,16 +47,26 @@ placeholder submodules, or planned catalog records for them.
 `.gitmodules` describes how to clone source. The Git tree's submodule gitlink is
 the authoritative workspace pin.
 
+For an Artifact protocol, catalog artifact paths are relative to the pinned
+submodule root. They allow static contract discovery; they are not execution,
+installation, activation, or permission to mutate a task.
+
+For a manifest-backed Artifact protocol, the pinned manifest is authoritative
+for invocation owners, terminal requirements, activation, cross-module calls,
+and task mutation. Matching catalog fields exist only for static discovery and
+must not weaken that manifest.
+
 The catalog does not activate modules, and a gitlink does not request an update
 to the module's latest branch. Updating a pin is an explicit Harness change that
 must be reviewed like any other source change.
 
 ## Independence
 
-Every module can be cloned, installed, used, released, and removed without
-Harness. Harness can be cloned without building or executing a module. There is
-no shared process, daemon, SDK, event stream, ledger, database, or lifecycle
-state between them.
+Every module can be cloned, used, versioned, and removed without Harness.
+Runtime modules can be installed independently; Artifact protocols remain
+usable without installation. Harness can be cloned without building or
+executing a module. There is no shared process, daemon, SDK, event stream,
+ledger, database, or lifecycle state between them.
 
 ## Composition boundary
 

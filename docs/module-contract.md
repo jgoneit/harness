@@ -9,11 +9,13 @@ A module must have:
 
 - an independent repository;
 - an independent README;
-- repository-owned installation and uninstallation guidance;
+- repository-owned installation and uninstallation guidance for a runtime, or
+  an explicit no-install/no-runtime boundary for an Artifact protocol;
 - one clear sentence describing its responsibility;
 - exactly one primary Toolkit Plane;
 - machine-readable output or a clearly defined Artifact;
-- a deterministic error contract;
+- a deterministic error contract for executable behavior, or a deterministic
+  validation contract for an Artifact protocol;
 - no automatic invocation of another Toolkit module;
 - no requirement for a Native Agent reasoning format;
 - provider- or Plugin-specific behavior isolated from the core contract;

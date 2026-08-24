@@ -24,11 +24,13 @@ The Toolkit's long-term conceptual planes are:
   and user friction.
 
 These planes are an architecture map, not a list of promised repositories. The
-current catalog contains Ward in Security and Seal in Acceptance.
+current catalog contains Ward in Security, Seal in Acceptance, and Eval in
+Evaluation.
 
 ## Invariants
 
-- Modules support independent installation.
+- Runtime modules support independent installation; Artifact protocols remain
+  independently usable without installation.
 - Modules own independent releases.
 - Public CLI, JSON, or Artifact contracts are stable and explicit.
 - No module automatically invokes another module.

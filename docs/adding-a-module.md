@@ -8,7 +8,8 @@ scaffold engine, or automatic discovery service.
 1. Confirm that the independent module repository actually exists.
 2. Review the module boundary and its one-sentence responsibility.
 3. Validate every requirement in [the module contract](module-contract.md).
-4. Add one exact entry to `catalog/modules.json`.
+4. Add one exact entry to `catalog/modules.json`; for an Artifact protocol,
+   include its static discovery paths relative to the submodule root.
 5. Add the repository as a Git submodule at its Plane-specific path.
 6. Check out and record the reviewed exact module commit.
 7. Smoke-test a fresh recursive clone and the read-only Harness scripts.
@@ -22,6 +23,10 @@ scaffold engine, or automatic discovery service.
 - Do not modify the module repository while preparing the Harness pin.
 - Do not add a planned entry, empty directory, or empty submodule for a future
   module.
+- For a manifest-backed Artifact protocol, the catalog's Plane, status, kind,
+  phase, invocation owners, terminal requirement, activation, module-invocation,
+  mutation, and Artifact paths must match the pinned manifest. The manifest is
+  authoritative when they disagree.
 
 ## Validation checklist
 

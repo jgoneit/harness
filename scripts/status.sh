@@ -17,9 +17,8 @@ while IFS=' ' read -r key path; do
   [ -n "$key" ] || continue
   [ -n "$path" ] || continue
 
-  if [ "$harness_commit" = unborn ]; then
-    recorded_commit=$(git ls-files --stage -- "$path" | awk '$1 == "160000" { print $2 }')
-  else
+  recorded_commit=$(git ls-files --stage -- "$path" | awk '$1 == "160000" { print $2 }')
+  if [ -z "$recorded_commit" ] && [ "$harness_commit" != unborn ]; then
     recorded_commit=$(git ls-tree HEAD -- "$path" | awk '$1 == "160000" { print $3 }')
   fi
   if [ -z "$recorded_commit" ]; then
