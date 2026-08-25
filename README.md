@@ -76,7 +76,23 @@ git ls-tree HEAD modules/evaluation/eval
 
 The superproject gitlink is the module version contract for this workspace. A
 module update requires an explicit Harness commit or pull request; submodules do
-not automatically follow `main`.
+not automatically follow `main`. Registry-maintenance automation may query an
+upstream `main` branch and propose that exact commit in a pull request, but the
+recorded pin moves only when that Harness pull request is merged.
+
+## Maintain exact pins
+
+The daily `Update submodule pins` workflow checks every catalog module and may
+open one pull request per module. Each candidate is limited to one gitlink plus
+that module's README pin references. The workflow rejects non-fast-forward
+upstream movement, stale README metadata, unrelated file changes, and published
+upstream checks that are pending or unsuccessful.
+
+Pull requests remain manual by default. Optional auto-merge requires a scoped
+GitHub App, the `pin-consistency` required check, repository auto-merge, and the
+module id in the `SUBMODULE_PIN_AUTO_MERGE_MODULES` repository variable. See
+[the pin automation runbook](docs/submodule-pin-automation.md) for setup,
+validation, failure handling, and rollback.
 
 ## Search local module sources
 
@@ -104,10 +120,12 @@ runtime; its catalog entry provides static discovery paths only.
 
 ## What Harness does not do
 
-Harness does not execute agents or modules, reviews, CI, deployment, retries,
-or repairs. It has no common runtime, event bus, provider registry, workflow
-history, central state machine, module enable flag, or shared mutable lifecycle
-state. It does not choose execution order or enforce model reasoning formats.
+Harness does not execute agents or modules or orchestrate user/module reviews,
+CI, deployment, retries, or repairs. Its own bounded registry-maintenance CI may
+verify catalog/gitlink consistency and propose exact-pin pull requests. It has
+no common runtime, event bus, provider registry, workflow history, central state
+machine, module enable flag, or shared mutable lifecycle state. It does not
+choose execution order or enforce model reasoning formats.
 
 ## Adding a future module
 
