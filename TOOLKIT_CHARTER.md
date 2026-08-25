@@ -45,8 +45,11 @@ Evaluation.
 
 Harness may provide a module catalog, repository URLs, Plane and compatibility
 metadata, exact Git submodule pins, clone/bootstrap documentation, local source
-search, module lifecycle links, architecture guidance, and evaluation links.
+search, module lifecycle links, architecture guidance, evaluation links, and
+bounded repository-maintenance CI that validates or proposes exact-pin changes.
 
 Harness must not run an agent or module, decide execution order, retry or repair
-failures, orchestrate PR/CI/deployment, maintain workflow history, or grow a
-runtime, event bus, provider registry, or central state machine.
+failures, orchestrate user or module PR/CI/deployment, maintain workflow history,
+or grow a runtime, event bus, provider registry, or central state machine. Pin
+maintenance may open and validate Harness pull requests, but it must not invoke
+a module, change a module repository, or own a user workflow transition.

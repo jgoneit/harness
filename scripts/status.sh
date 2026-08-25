@@ -28,7 +28,7 @@ while IFS=' ' read -r key path; do
   if [ -e "$path/.git" ]; then
     checked_out_commit=$(git -C "$path" rev-parse --verify HEAD)
     if [ "$recorded_commit" = "$checked_out_commit" ] &&
-       [ -z "$(git -C "$path" status --porcelain)" ]; then
+       [ -z "$(git -C "$path" status --porcelain --untracked-files=all)" ]; then
       worktree_state=clean
     else
       worktree_state=dirty

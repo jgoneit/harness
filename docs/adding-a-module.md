@@ -19,7 +19,9 @@ scaffold engine, or automatic discovery service.
 
 - Prefer a relative submodule URL when the repository shares the GitHub owner.
 - Record one reviewed commit; do not configure automatic branch following.
-- A later module update is a new explicit Harness commit or pull request.
+- A later module update is a new explicit Harness commit or pull request. The
+  maintenance workflow may propose that pull request by querying upstream
+  `main`; it does not change clone or checkout behavior.
 - Do not modify the module repository while preparing the Harness pin.
 - Do not add a planned entry, empty directory, or empty submodule for a future
   module.
@@ -34,9 +36,11 @@ Before review, verify:
 
 ```bash
 python3 -m json.tool catalog/modules.json >/dev/null
+python3 scripts/pin_registry.py validate
 git config -f .gitmodules --get-regexp '^submodule\..*\.(path|url)$'
 git submodule status --recursive
 scripts/bootstrap.sh
+python3 scripts/pin_registry.py validate --require-clean-submodules
 scripts/status.sh
 scripts/search.sh '<known read-only pattern>'
 ```

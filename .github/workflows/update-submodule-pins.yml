@@ -1,0 +1,401 @@
+name: Update submodule pins
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      module:
+        description: Module id to update, or all
+        required: false
+        default: all
+        type: string
+      auto_merge:
+        description: Request auto-merge after required checks pass
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: submodule-pin-maintenance
+  cancel-in-progress: false
+
+jobs:
+  select-modules:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      modules: ${{ steps.select.outputs.modules }}
+    steps:
+      - name: Check out Harness
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: main
+          submodules: false
+
+      - name: Select catalog modules
+        id: select
+        env:
+          REQUESTED_MODULE: ${{ inputs.module }}
+        run: |
+          if [ -n "$REQUESTED_MODULE" ] && [ "$REQUESTED_MODULE" != all ]; then
+            modules=$(python3 scripts/pin_registry.py list --json --module "$REQUESTED_MODULE")
+          else
+            modules=$(python3 scripts/pin_registry.py list --json)
+          fi
+          echo "modules=$modules" >>"$GITHUB_OUTPUT"
+
+  update-module:
+    needs: select-modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      checks: read
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        module: ${{ fromJSON(needs.select-modules.outputs.modules) }}
+    steps:
+      - name: Inspect GitHub App configuration
+        id: app-config
+        env:
+          APP_ID: ${{ vars.HARNESS_AUTOMATION_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.HARNESS_AUTOMATION_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$APP_ID" ] && [ -n "$APP_PRIVATE_KEY" ]; then
+            echo 'configured=true' >>"$GITHUB_OUTPUT"
+          elif [ -z "$APP_ID" ] && [ -z "$APP_PRIVATE_KEY" ]; then
+            echo 'configured=false' >>"$GITHUB_OUTPUT"
+          else
+            echo 'GitHub App id and private key must be configured together' >&2
+            exit 1
+          fi
+
+      - name: Create scoped GitHub App token
+        id: app-token
+        if: steps.app-config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ vars.HARNESS_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.HARNESS_AUTOMATION_APP_PRIVATE_KEY }}
+          permission-checks: read
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Check out Harness
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          ref: main
+          submodules: false
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Skip modules with an open automation PR
+        id: open-pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          MODULE: ${{ matrix.module }}
+        run: |
+          existing_pr=$(
+            gh pr list --state open --limit 100 --json headRefName,url |
+              python3 -c '
+          import json, os, sys
+          prefix = "automation/submodule-" + os.environ["MODULE"] + "-"
+          matches = [item["url"] for item in json.load(sys.stdin) if item["headRefName"].startswith(prefix)]
+          print(matches[0] if matches else "")
+          '
+          )
+          if [ -n "$existing_pr" ]; then
+            echo "An automation PR is already open for $MODULE: $existing_pr"
+            echo 'skip=true' >>"$GITHUB_OUTPUT"
+          else
+            echo 'skip=false' >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage the fast-forward pin update
+        id: update
+        if: steps.open-pr.outputs.skip != 'true'
+        env:
+          MODULE: ${{ matrix.module }}
+        run: |
+          result=$(python3 scripts/pin_registry.py update "$MODULE")
+          echo "$result"
+          RESULT_JSON="$result" OUTPUT_FILE="$GITHUB_OUTPUT" python3 - <<'PY'
+          import json
+          import os
+
+          result = json.loads(os.environ["RESULT_JSON"])
+          with open(os.environ["OUTPUT_FILE"], "a", encoding="utf-8") as output:
+              for key in ("changed", "module", "name", "repository", "path", "old_commit", "new_commit"):
+                  value = result[key]
+                  if isinstance(value, bool):
+                      value = str(value).lower()
+                  output.write(f"{key}={value}\n")
+          PY
+
+      - name: Require successful published upstream checks
+        id: upstream
+        if: steps.update.outputs.changed == 'true'
+        env:
+          NEW_COMMIT: ${{ steps.update.outputs.new_commit }}
+          UPSTREAM_REPOSITORY: ${{ steps.update.outputs.repository }}
+        run: |
+          repository_slug=${UPSTREAM_REPOSITORY#https://github.com/}
+          curl --fail --silent --show-error \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${repository_slug}/commits/${NEW_COMMIT}/check-runs?per_page=100" \
+            >"$RUNNER_TEMP/upstream-checks.json"
+          curl --fail --silent --show-error \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${repository_slug}/commits/${NEW_COMMIT}/status" \
+            >"$RUNNER_TEMP/upstream-status.json"
+          python3 - "$RUNNER_TEMP/upstream-checks.json" "$RUNNER_TEMP/upstream-status.json" <<'PY'
+          import json
+          import os
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              check_runs = json.load(handle).get("check_runs", [])
+          with open(sys.argv[2], encoding="utf-8") as handle:
+              status = json.load(handle)
+
+          accepted = {"success", "neutral", "skipped"}
+          incomplete = [
+              run for run in check_runs
+              if run.get("status") != "completed" or run.get("conclusion") not in accepted
+          ]
+          statuses = status.get("statuses", [])
+          if incomplete:
+              details = ", ".join(
+                  f"{run.get('name')}={run.get('status')}/{run.get('conclusion')}"
+                  for run in incomplete
+              )
+              raise SystemExit(f"upstream checks are not successful: {details}")
+          if statuses and status.get("state") != "success":
+              raise SystemExit(f"combined upstream commit status is {status.get('state')}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"check_runs={len(check_runs)}\n")
+              output.write(f"commit_statuses={len(statuses)}\n")
+              output.write(
+                  "published_evidence="
+                  + ("true" if check_runs or statuses else "false")
+                  + "\n"
+              )
+          print(
+              f"upstream validation passed: {len(check_runs)} check runs, "
+              f"{len(statuses)} commit statuses"
+          )
+          PY
+
+      - name: Validate the staged candidate
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          python3 -m json.tool catalog/modules.json >/dev/null
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          python3 scripts/pin_registry.py validate
+          sh -n scripts/*.sh
+          git diff --cached --check
+          scripts/bootstrap.sh
+          python3 scripts/pin_registry.py validate --require-clean-submodules
+          GIT_OPTIONAL_LOCKS=0 scripts/status.sh
+          scripts/search.sh 'auto_invokes_modules' catalog/modules.json
+
+      - name: Commit and push the automation branch
+        id: push
+        if: steps.update.outputs.changed == 'true'
+        env:
+          MODULE: ${{ steps.update.outputs.module }}
+          MODULE_NAME: ${{ steps.update.outputs.name }}
+          NEW_COMMIT: ${{ steps.update.outputs.new_commit }}
+        run: |
+          candidate_base=$(git rev-parse HEAD)
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$candidate_base" ]; then
+            echo 'Harness main advanced during pin preparation; rerun the workflow.' >&2
+            exit 1
+          fi
+          short_commit=${NEW_COMMIT:0:12}
+          branch="automation/submodule-${MODULE}-${short_commit}"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            echo "Automation branch already exists without an open PR: $branch" >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git commit \
+            -m "chore(registry): advance ${MODULE_NAME} main pin" \
+            -m "Why:
+          - ${MODULE_NAME} main contains a newer candidate detected by registry automation.
+          What:
+          - Advance the ${MODULE_NAME} gitlink and synchronize its README pin references.
+          Validation:
+          - Upstream published checks and commit statuses queried
+          - pin_registry unit and consistency checks passed
+          - recursive submodule bootstrap and status checks passed"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "branch=$branch" >>"$GITHUB_OUTPUT"
+          echo "head_commit=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+      - name: Open the pin update PR
+        id: pull-request
+        if: steps.push.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          BRANCH: ${{ steps.push.outputs.branch }}
+          MODULE_NAME: ${{ steps.update.outputs.name }}
+          MODULE_PATH: ${{ steps.update.outputs.path }}
+          OLD_COMMIT: ${{ steps.update.outputs.old_commit }}
+          NEW_COMMIT: ${{ steps.update.outputs.new_commit }}
+          UPSTREAM_REPOSITORY: ${{ steps.update.outputs.repository }}
+        run: |
+          body_file="$RUNNER_TEMP/pull-request.md"
+          BODY_FILE="$body_file" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          name = os.environ["MODULE_NAME"]
+          path = os.environ["MODULE_PATH"]
+          old = os.environ["OLD_COMMIT"]
+          new = os.environ["NEW_COMMIT"]
+          repository = os.environ["UPSTREAM_REPOSITORY"]
+          body = f"""## 목적
+          {name}의 upstream `main` 변경을 Harness의 재현 가능한 exact gitlink로 반영합니다. 모듈 실행이나 설치 동작은 변경하지 않습니다.
+
+          ## 변경 내용
+          - `{path}` gitlink: `{old}` → `{new}`
+          - README의 {name} pin SHA 참조 동기화
+          - upstream 비교: {repository}/compare/{old}...{new}
+
+          ## 설계 판단
+          - 선택한 방식: upstream `main`을 조회하되 Harness에는 exact SHA를 커밋
+          - 대안: clone 시 submodule branch 자동 추적
+          - 선택 이유: 기존 checkout 재현성과 독립적인 리뷰/롤백 단위를 유지
+          - 포기한 것: README의 의미상 설명이 새 커밋과 일치하는지는 자동으로 증명하지 않음
+
+          ## 검증 방법
+          - [x] upstream check run 및 commit status 확인
+          - [x] pin registry 단위 테스트
+          - [x] catalog/.gitmodules/gitlink/README 일관성 확인
+          - [x] recursive submodule bootstrap 및 clean 상태 확인
+          - [x] 변경 범위를 gitlink와 README로 제한
+
+          ## 검증 결과
+          - 자동화 워크플로의 사전 검증 통과 후 PR 생성
+          - PR의 `pin-consistency` required check에서 fresh recursive clone 재검증 예정
+
+          ## 영향 범위
+          - Harness submodule gitlink
+          - README pin 표기와 pinned link
+
+          ## 리스크
+          - 모듈 동작 설명의 의미상 정확성은 기계적으로 검증하지 못하므로 기본값은 수동 병합입니다.
+          - upstream `main` 변경으로 기존 소비자의 동작이 달라질 수 있습니다.
+
+          ## 롤백 방법
+          - 이 PR의 {name} gitlink/README 변경만 revert하면 이전 exact pin으로 복구됩니다.
+
+          ## 리뷰어가 중점적으로 봐야 할 부분
+          - upstream 변경이 Harness의 현재 {name} 설명과 실험 상태에 부합하는지
+          - 공개 계약이나 설치 경계 변경이 추가 문서 수정을 요구하는지
+          """
+          Path(os.environ["BODY_FILE"]).write_text(body, encoding="utf-8")
+          PY
+          pr_url=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(registry): advance ${MODULE_NAME} main pin" \
+            --body-file "$body_file")
+          echo "url=$pr_url" >>"$GITHUB_OUTPUT"
+
+      - name: Enable optional auto-merge
+        if: steps.pull-request.outputs.url != ''
+        env:
+          APP_CONFIGURED: ${{ steps.app-config.outputs.configured }}
+          AUTO_MERGE_MODULES: ${{ vars.SUBMODULE_PIN_AUTO_MERGE_MODULES }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          HEAD_COMMIT: ${{ steps.push.outputs.head_commit }}
+          MODULE: ${{ steps.update.outputs.module }}
+          PUBLISHED_UPSTREAM_EVIDENCE: ${{ steps.upstream.outputs.published_evidence }}
+          PR_URL: ${{ steps.pull-request.outputs.url }}
+          REQUEST_AUTO_MERGE: ${{ (github.event_name == 'workflow_dispatch' && inputs.auto_merge) || github.event_name == 'schedule' }}
+        run: |
+          if [ "$REQUEST_AUTO_MERGE" != true ]; then
+            echo 'Auto-merge was not requested; leaving the validated PR for review.'
+            exit 0
+          fi
+          allowlisted=$(python3 - <<'PY'
+          import os
+          import re
+
+          configured = {
+              item for item in re.split(r"[\s,]+", os.environ["AUTO_MERGE_MODULES"].strip())
+              if item
+          }
+          print("true" if os.environ["MODULE"] in configured else "false")
+          PY
+          )
+          if [ "$allowlisted" != true ]; then
+            echo "$MODULE is not in SUBMODULE_PIN_AUTO_MERGE_MODULES; leaving the PR for review."
+            exit 0
+          fi
+          if [ "$PUBLISHED_UPSTREAM_EVIDENCE" != true ]; then
+            echo 'No upstream checks or statuses were published; leaving the PR for review.'
+            exit 0
+          fi
+          if [ "$APP_CONFIGURED" != true ]; then
+            echo 'Auto-merge requires the scoped GitHub App so PR validation is triggered.' >&2
+            exit 1
+          fi
+          deadline=$((SECONDS + 900))
+          while :; do
+            checks=$(gh pr checks "$PR_URL" --json name,bucket,workflow 2>/dev/null || true)
+            check_state=$(CHECKS_JSON="$checks" python3 - <<'PY'
+          import json
+          import os
+
+          runs = [
+              run for run in json.loads(os.environ["CHECKS_JSON"] or "[]")
+              if run.get("name") == "pin-consistency"
+              and run.get("workflow") == "Validate registry pins"
+          ]
+          if not runs:
+              print("missing")
+          elif any(run.get("bucket") in {"fail", "cancel", "skipping"} for run in runs):
+              print("failure")
+          elif any(run.get("bucket") == "pending" for run in runs):
+              print("pending")
+          elif any(run.get("bucket") == "pass" for run in runs):
+              print("success")
+          else:
+              print("missing")
+          PY
+            )
+            case "$check_state" in
+              success)
+                break
+                ;;
+              failure)
+                echo 'pin-consistency did not succeed; auto-merge is blocked.' >&2
+                exit 1
+                ;;
+              missing|pending)
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  echo 'Timed out waiting for pin-consistency; auto-merge is blocked.' >&2
+                  exit 1
+                fi
+                sleep 15
+                ;;
+              *)
+                echo "Unexpected pin-consistency state: $check_state" >&2
+                exit 1
+                ;;
+            esac
+          done
+          gh pr merge "$PR_URL" --auto --squash --match-head-commit "$HEAD_COMMIT"

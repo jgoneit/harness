@@ -58,7 +58,15 @@ must not weaken that manifest.
 
 The catalog does not activate modules, and a gitlink does not request an update
 to the module's latest branch. Updating a pin is an explicit Harness change that
-must be reviewed like any other source change.
+must be reviewed like any other source change. Bounded maintenance automation
+may query upstream `main` and propose a new exact pin, but clones continue to
+resolve the recorded gitlink rather than a moving branch.
+
+Registry-maintenance CI is part of the Harness repository boundary, not the
+Toolkit execution plane. It may validate catalog, `.gitmodules`, gitlinks,
+README pin references, and clean recursive checkouts. It may not run a module,
+modify an upstream repository, decide Toolkit composition, or advance a user's
+workflow.
 
 ## Independence
 
