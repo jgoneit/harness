@@ -1,0 +1,70 @@
+name: Validate registry pins
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-registry-pins-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: pin-consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the candidate
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Validate static registry metadata
+        run: |
+          python3 -m json.tool catalog/modules.json >/dev/null
+          python3 scripts/pin_registry.py validate
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          sh -n scripts/*.sh
+          git diff --check
+
+      - name: Initialize and validate exact pins
+        run: |
+          scripts/bootstrap.sh
+          python3 scripts/pin_registry.py validate --require-clean-submodules
+          GIT_OPTIONAL_LOCKS=0 scripts/status.sh
+          scripts/search.sh 'auto_invokes_modules' catalog/modules.json
+
+      - name: Validate automated PR scope and upstream target
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          case "$HEAD_REF" in
+            automation/submodule-*)
+              python3 scripts/pin_registry.py validate-update-diff --base "$BASE_SHA"
+              ;;
+          esac
+
+      - name: Verify a fresh recursive clone
+        env:
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          temporary_root=$(mktemp -d)
+          fresh_repository="$temporary_root/harness"
+          git clone --no-checkout "https://github.com/${REPOSITORY}.git" "$fresh_repository"
+          git -C "$fresh_repository" fetch origin "$EVENT_REF"
+          git -C "$fresh_repository" checkout --detach "$EVENT_SHA"
+          git -C "$fresh_repository" submodule update --init --recursive
+          python3 "$fresh_repository/scripts/pin_registry.py" \
+            --root "$fresh_repository" validate --require-clean-submodules
+          GIT_OPTIONAL_LOCKS=0 "$fresh_repository/scripts/status.sh"
