@@ -32,38 +32,6 @@
         "exit-code"
       ],
       "auto_invokes_modules": false
-    },
-    {
-      "id": "eval",
-      "name": "Eval",
-      "plane": "evaluation",
-      "status": "experimental",
-      "repository": "https://github.com/jgoneit/eval",
-      "submodule_path": "modules/evaluation/eval",
-      "description": "Post-task evidence protocol for measuring Agent Toolkit module value and cost on real tasks.",
-      "kind": "artifact-protocol",
-      "phase": "post-task",
-      "invocation_owners": [
-        "native-agent",
-        "user",
-        "ci"
-      ],
-      "requires_terminal_outcome": true,
-      "self_activates": false,
-      "mutates_user_task": false,
-      "exposes": [
-        "module-manifest",
-        "observation-schema",
-        "report-template"
-      ],
-      "artifacts": {
-        "module_manifest": "toolkit-module.json",
-        "charter": "CHARTER.md",
-        "protocol": "protocol.md",
-        "observation_schema": "schemas/observation-v1.schema.json",
-        "report_template": "templates/decision-report-v1.md"
-      },
-      "auto_invokes_modules": false
     }
   ]
 }

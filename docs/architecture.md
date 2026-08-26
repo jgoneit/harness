@@ -17,8 +17,7 @@
                                                 |
                                       Ward / Security
                                       Seal / Acceptance
-                                      Eval / Evaluation
-                                      (all experimental)
+                                      (both experimental)
 ```
 
 Execution remains above the module layer. Harness and modules expose state,
@@ -31,15 +30,14 @@ The architecture recognizes Knowledge, Security, Execution, Acceptance, Review,
 and Evaluation concerns. Execution is owned by the Native Agent and is not a
 Toolkit module. A conceptual Plane does not imply that a repository exists.
 
-The registry contains three real modules:
+The registry contains two real modules:
 
 - Ward in the Security plane
 - Seal in the Acceptance plane
-- Eval in the Evaluation plane
 
-Knowledge and Review entries are added only after their independent repositories
-and contracts exist. Harness does not create empty directories, placeholder
-submodules, or planned catalog records for them.
+Knowledge, Review, and Evaluation entries are added only after their independent
+repositories and contracts exist. Harness does not create empty directories,
+placeholder submodules, or planned catalog records for them.
 
 ## Catalog and gitlinks
 

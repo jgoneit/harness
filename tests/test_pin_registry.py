@@ -42,8 +42,8 @@ class PinRegistryTests(unittest.TestCase):
             "- [Ward README](https://github.com/jgoneit/ward/tree/"
             f"{self.old_sha}#readme)\n"
             f"Historical unrelated SHA: {self.old_sha}\n"
-            "| Eval | Evaluation | Experimental | <https://github.com/jgoneit/eval> | "
-            f"`{other_sha}` | `modules/evaluation/eval` |\n"
+            "| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | "
+            f"`{other_sha}` | `modules/acceptance/seal` |\n"
         )
 
         updated = pin_registry.synchronize_readme(
