@@ -2,7 +2,7 @@ name: Update submodule pins
 
 on:
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '0 17 * * *' # 02:00 Asia/Seoul (UTC+09:00)
   workflow_dispatch:
     inputs:
       module:

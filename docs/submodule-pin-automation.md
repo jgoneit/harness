@@ -6,8 +6,11 @@ follow a moving branch and it does not run any Toolkit module.
 
 ## Workflow
 
-`Update submodule pins` runs daily at 03:17 UTC and can also be started with
-`workflow_dispatch`. A manual run accepts a catalog module id or `all`.
+`Update submodule pins` is scheduled daily at 17:00 UTC, which is 02:00 in
+Asia/Seoul (KST, UTC+09:00), and can also be started with `workflow_dispatch`.
+A manual run accepts a catalog module id or `all`. GitHub Actions scheduled
+events are best effort and can start later than the configured time, especially
+at the start of an hour.
 
 For each selected module, the workflow:
 
