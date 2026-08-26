@@ -17,7 +17,7 @@ Only repositories that actually exist are listed.
 
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
-| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `998af7bbe865c24b523b393e0c71d8861bb4f364` | `modules/acceptance/seal` |
+| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `1bed27096866700f840e59b2c75c17374b50ad6b` | `modules/acceptance/seal` |
 | Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `0637b3e567dd7f856d1ae492498658a080986e9e` | `modules/security/ward` |
 | Eval | Evaluation | Experimental | <https://github.com/jgoneit/eval> | `1337639155563fddedfeec14134de5ff7a6d5845` | `modules/evaluation/eval` |
 
