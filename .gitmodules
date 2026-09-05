@@ -4,6 +4,3 @@
 [submodule "modules/security/ward"]
 	path = modules/security/ward
 	url = ../ward.git
-[submodule "modules/evaluation/eval"]
-	path = modules/evaluation/eval
-	url = ../eval.git

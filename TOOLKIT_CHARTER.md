@@ -24,8 +24,7 @@ The Toolkit's long-term conceptual planes are:
   and user friction.
 
 These planes are an architecture map, not a list of promised repositories. The
-current catalog contains Ward in Security, Seal in Acceptance, and Eval in
-Evaluation.
+current catalog contains Ward in Security and Seal in Acceptance.
 
 ## Invariants
 
