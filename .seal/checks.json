@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "checks": {
+    "registry-unit-tests": {
+      "argv": ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
+      "required": true,
+      "timeout_seconds": 120
+    },
+    "registry-pins": {
+      "argv": ["python3", "scripts/pin_registry.py", "validate", "--require-clean-submodules"],
+      "required": true,
+      "timeout_seconds": 120
+    }
+  }
+}
