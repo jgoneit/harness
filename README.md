@@ -17,7 +17,7 @@ Only repositories that actually exist are listed.
 
 | Module | Plane | Status | Repository | Pinned commit | Workspace path |
 | --- | --- | --- | --- | --- | --- |
-| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `bcb0041a70f7ba02c29a0ba8c1e83bfea36c143e` | `modules/acceptance/seal` |
+| Seal | Acceptance | Experimental | <https://github.com/jgoneit/seal> | `11f6a304064be475fec75fe815bdcce85ae8a973` | `modules/acceptance/seal` |
 | Ward | Security | Experimental | <https://github.com/jgoneit/ward> | `7464e66951312f0a2f40d418a8f9c17f634885e8` | `modules/security/ward` |
 
 The pinned Seal candidate provides Task creation and reads, manifest-valid
