@@ -107,11 +107,25 @@ boundary:
 
 Harness does not copy or wrap module installers.
 
+## Recipes
+
+A recipe is a tested composition that an adopting repository copies into its
+own CI. It keeps workflow state out of the Native Agent's context: intent is
+committed before implementation, and evidence is judged after it.
+
+| Recipe | Status | Modules | Summary |
+| --- | --- | --- | --- |
+| [Seal PR acceptance](recipes/seal-pr-acceptance/README.md) | Experimental | Seal | Judge a pull request in CI against a Seal Task merged before implementation |
+
+Harness applies the Seal PR acceptance recipe to its own pull requests. See the
+[recipe boundary](docs/architecture.md#recipes).
+
 ## What Harness does not do
 
 Harness does not execute agents or modules or orchestrate user/module reviews,
 CI, deployment, retries, or repairs. Its own bounded registry-maintenance CI may
-verify catalog/gitlink consistency and propose exact-pin pull requests. It has
+verify catalog/gitlink consistency and propose exact-pin pull requests. Its
+adoption of a recipe for its own pull requests is separate from that CI. It has
 no common runtime, event bus, provider registry, workflow history, central state
 machine, module enable flag, or shared mutable lifecycle state. It does not
 choose execution order or enforce model reasoning formats.

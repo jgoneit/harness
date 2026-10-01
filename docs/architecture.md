@@ -80,3 +80,24 @@ The user, Native Agent, or CI may decide to inspect project knowledge, apply
 host security policy, implement work, query Seal, request a review, or evaluate
 cost. No Toolkit component encodes that order or automatically calls the next
 component after success or failure.
+
+## Recipes
+
+A recipe under `recipes/` is a documented composition that an adopting
+repository copies into its own CI. The adopter owns the order it encodes;
+modules stay unaware of it and Harness does not execute it elsewhere.
+
+```text
+Human intent PR ──merge──▶ base branch (Task input, checks, acceptance tests)
+                                  │
+Native Agent ──implementation PR──┤  agent sees intent and failure feedback only
+                                  ▼
+Adopter CI: merge-base ─▶ seal task create ─▶ PR head ─▶ seal verify ─▶ seal complete
+                                  │
+Human merge decision ◀── accepted / rejected / error
+```
+
+[Seal PR acceptance](../recipes/seal-pr-acceptance/README.md) is the first
+recipe. Harness applies it to its own pull requests through
+`.github/workflows/seal-pr-acceptance.yml`. That workflow is recipe adoption;
+it is separate from registry-maintenance CI, which still never runs a module.

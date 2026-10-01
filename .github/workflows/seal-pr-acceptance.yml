@@ -1,0 +1,108 @@
+name: Seal PR acceptance
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seal-pr-acceptance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  SEAL_VERSION: v0.3.0-rc.4
+  RECIPE_PATH: recipes/seal-pr-acceptance/seal_pr_acceptance.py
+
+jobs:
+  acceptance:
+    name: seal-acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the pull request head
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          submodules: false
+          persist-credentials: false
+
+      # The pull request may edit its own copy of the recipe; evaluation uses the base branch copy.
+      - name: Load the recipe from the base branch
+        id: recipe
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git show "$BASE_SHA:$RECIPE_PATH" >"$RUNNER_TEMP/seal_pr_acceptance.py" 2>/dev/null; then
+            echo 'available=true' >>"$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Read the human-owned Task binding
+        id: bind
+        if: steps.recipe.outputs.available == 'true'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s' "$PR_BODY" >"$RUNNER_TEMP/pull-request-body.txt"
+          python3 "$RUNNER_TEMP/seal_pr_acceptance.py" bind \
+            --body-file "$RUNNER_TEMP/pull-request-body.txt" >>"$GITHUB_OUTPUT"
+
+      - name: Install the pinned Seal release
+        if: steps.bind.outputs.task != ''
+        run: |
+          installer=$(mktemp "$RUNNER_TEMP/seal-install.XXXXXX")
+          curl -fsSL "https://raw.githubusercontent.com/jgoneit/seal/${SEAL_VERSION}/install.sh" -o "$installer"
+          sh "$installer" --version "$SEAL_VERSION"
+
+      - name: Evaluate the bound Task outside the agent loop
+        if: steps.bind.outputs.task != ''
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TASK_NAME: ${{ steps.bind.outputs.task }}
+        run: |
+          python3 "$RUNNER_TEMP/seal_pr_acceptance.py" accept \
+            --seal "$HOME/.local/bin/seal" \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --task "$TASK_NAME" \
+            --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Report that acceptance was not evaluated
+        if: steps.recipe.outputs.available != 'true' || steps.bind.outputs.task == ''
+        env:
+          RECIPE_AVAILABLE: ${{ steps.recipe.outputs.available }}
+        run: |
+          if [ "$RECIPE_AVAILABLE" != true ]; then
+            reason='the recipe is not present on the base branch'
+          else
+            reason='the pull request has no Seal-Task binding'
+          fi
+          printf '## Seal PR acceptance: not evaluated\n\nNo Acceptance decision was made: %s.\n' \
+            "$reason" >>"$GITHUB_STEP_SUMMARY"
+
+  recipe-regression:
+    name: seal-recipe-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the candidate
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Install the pinned Seal release
+        run: |
+          installer=$(mktemp "$RUNNER_TEMP/seal-install.XXXXXX")
+          curl -fsSL "https://raw.githubusercontent.com/jgoneit/seal/${SEAL_VERSION}/install.sh" -o "$installer"
+          sh "$installer" --version "$SEAL_VERSION"
+
+      - name: Run recipe regression scenarios against the pinned release
+        run: |
+          SEAL_BIN="$HOME/.local/bin/seal" python3 -m unittest discover \
+            -s tests -p 'test_seal_pr_acceptance.py' -v

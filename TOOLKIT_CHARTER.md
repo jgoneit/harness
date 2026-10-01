@@ -40,6 +40,19 @@ current catalog contains Ward in Security and Seal in Acceptance.
 - Composition belongs to the Native Agent, user, or CI.
 - A module remains usable without cloning Harness.
 
+## Agent-visible footprint
+
+The Toolkit keeps workflow state out of the Native Agent's context. The agent
+receives intent (objective, Scope, acceptance criteria) and, on failure,
+actionable results. It does not carry module identities, lifecycle phases, or
+exit-code routing. On the normal path of work the user already authorized, a
+module adds no prompt or model context.
+
+Integrity comes from boundaries rather than from controlling the agent's
+process: intent is committed before implementation and evidence is judged
+after it, outside the agent loop. A module detects a violation at a boundary
+instead of steering the agent away from it.
+
 ## Harness responsibilities
 
 Harness may provide a module catalog, repository URLs, Plane and compatibility
@@ -47,8 +60,18 @@ metadata, exact Git submodule pins, clone/bootstrap documentation, local source
 search, module lifecycle links, architecture guidance, evaluation links, and
 bounded repository-maintenance CI that validates or proposes exact-pin changes.
 
+Harness may also publish recipes: documented, tested compositions of
+independent modules that an adopting repository copies and runs in its own CI.
+A recipe is guidance, not a runtime. No module depends on it, and Harness does
+not run it for another repository.
+
 Harness must not run an agent or module, decide execution order, retry or repair
 failures, orchestrate user or module PR/CI/deployment, maintain workflow history,
 or grow a runtime, event bus, provider registry, or central state machine. Pin
 maintenance may open and validate Harness pull requests, but it must not invoke
 a module, change a module repository, or own a user workflow transition.
+
+As an ordinary adopting repository, Harness may apply a recipe to its own pull
+requests. That is the repository owner's composition under the same rules as
+any adopter, separate from registry maintenance, and not Toolkit execution on
+behalf of users.
